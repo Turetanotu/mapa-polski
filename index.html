@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Geografia Polski – mapa do nauki</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f4ef;--card:#fff;--tx:#1d2733;--mu:#6b7683;--ac:#2a6fdb;--ok:#1f9d55;--no:#d93b3b;--land:#e6ecdf;--ln:#8a9a86}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181d;--card:#1f252c;--tx:#e8ecf0;--mu:#93a0ad;--ac:#6aa5ff;--ok:#43c47a;--no:#ff6b6b;--land:#27302a;--ln:#5d705b}}
+:root[data-theme="dark"]{--bg:#14181d;--card:#1f252c;--tx:#e8ecf0;--mu:#93a0ad;--ac:#6aa5ff;--ok:#43c47a;--no:#ff6b6b;--land:#27302a;--ln:#5d705b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;padding:10px;max-width:760px;margin:auto}
+h1{font-size:18px;margin:4px 0 8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+button{font:inherit;border:1px solid var(--ln);background:var(--card);color:var(--tx);border-radius:18px;padding:6px 12px;cursor:pointer}
+button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#q{background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:62px}
+#q b{font-size:20px;display:block}#q small{color:var(--mu)}
+#sc{color:var(--mu);font-size:14px;text-align:right;white-space:nowrap}
+svg{width:100%;height:auto;background:var(--card);border-radius:12px;touch-action:manipulation;display:block}
+#pl{fill:var(--land);stroke:var(--ln);stroke-width:2}
+.f{fill:none;stroke:var(--mu);stroke-width:2;opacity:.8}
+.t{font-size:13px;fill:var(--tx);paint-order:stroke;stroke:var(--card);stroke-width:3px}
+.msg{padding:8px 2px;color:var(--mu);font-size:14px}
+</style></head><body>
+<h1>🗺️ Geografia Polski – kliknij na mapie</h1>
+<div class="chips" id="cats"></div>
+<div class="chips"><button id="m1" class="on">Quiz</button><button id="m2">Nauka (dotknij = nazwa)</button></div>
+<div class="chips"><span class="msg" style="padding:6px 0">Margines błędu:</span><button data-m="0.7">Mały</button><button data-m="1.5" class="on">Średni</button><button data-m="2.4">Duży</button></div>
+<div id="q"><div><small id="ql">Wybierz kategorię</small><b id="qn">…</b></div><div id="sc"></div></div>
+<svg id="s" viewBox="0 0 670 640"><path id="pl"/><g id="L"></g></svg>
+<div class="msg" id="msg"></div>
+<div class="chips"><button id="nx" style="display:none">Dalej →</button><button id="rt" style="display:none">Powtórz błędne</button></div>
+<script>
+const CATS={r:'Rzeki',j:'Jeziora i zbiorniki',g:'Góry',p:'Parki narodowe',l:'Puszcze i bory',k:'Krainy',w:'Wybrzeże, kanały, wyspy'};
+const LBL={r:'Rzeka',j:'Jezioro / zbiornik',g:'Góry',p:'Park Narodowy',l:'Puszcza / bór',k:'Kraina',w:'Wybrzeże / kanał / wyspa'};
+const TOL={r:14,j:20,g:22,p:20,l:24,k:48,w:20};
+const PT={
+j:"Śniardwy,21.73,53.75;Mamry,21.65,54.12;Hańcza,22.8,54.26;Jeziorak,19.57,53.6;Wigry,23.1,54.03;Dąbie,14.65,53.45;Łebsko,17.4,54.7;Gopło,18.3,52.5;Drawsko,16.0,53.55;Zb. Koronowskie,17.9,53.3;Zb. Jeziorsko,18.65,51.75;Zb. Sulejowskie,19.9,51.4;Zb. Włocławskie,19.35,52.6;Zb. Goczałkowickie,18.95,49.95;Zb. Żegrzyńskie,21.0,52.5;Zb. Solińskie,22.5,49.4;Zb. Otmuchowskie,17.2,50.47;Zb. Turawskie,17.8,50.72;Zb. Żywieckie,19.15,49.7",
+g:"Góry Świętokrzyskie,20.9,50.85;Karkonosze,15.65,50.78;Góry Sowie,16.5,50.65;Góry Stołowe,16.35,50.45;Masyw Śnieżnika,16.85,50.2;Tatry,19.95,49.2;Masyw Babiej Góry,19.53,49.57;Gorce,20.15,49.55;Pieniny,20.4,49.4;Bieszczady,22.5,49.1",
+p:"Woliński,14.5,53.95;Słowiński,17.3,54.7;Borów Tucholskich,17.6,53.7;Wigierski,23.0,54.0;Biebrzański,22.6,53.4;Narwiański,22.9,52.95;Białowieski,23.85,52.75;Bieszczadzki,22.5,49.1;Kampinoski,20.5,52.3;Wielkopolski,16.8,52.28;Ujście Warty,14.85,52.5;Drawieński,15.9,53.15;Poleski,23.1,51.45;Roztoczański,22.95,50.55;Świętokrzyski,20.95,50.87;Magurski,21.5,49.5;Pieniński,20.4,49.42;Gorczański,20.2,49.55;Tatrzański,19.95,49.25;Babiogórski,19.53,49.58;Ojcowski,19.83,50.2;Gór Stołowych,16.35,50.45;Karkonoski,15.65,50.78",
+l:"Puszcza Bukowa,14.6,53.4;Puszcza Kurpiowska,21.5,53.4;Puszcza Augustowska,23.2,53.9;Puszcza Knyszyńska,23.1,53.2;Puszcza Białowieska,23.7,52.7;Puszcza Kampinoska,20.5,52.3;Puszcza Notecka,16.0,52.8;Puszcza Kozienicka,21.5,51.6;Puszcza Solska,22.4,50.5;Puszcza Świętokrzyska,20.9,50.85;Puszcza Sandomierska,21.8,50.6;Bory Tucholskie,17.7,53.7;Bory Dolnośląskie,15.3,51.4",
+k:"Pojezierze Pomorskie,16.5,53.8;Pojezierze Mazurskie,21.5,53.8;Pojezierze Wielkopolskie,17.0,52.5;Nizina Szczecińska,14.8,53.2;Nizina Wielkopolska,17.5,52.0;Nizina Śląska,16.8,51.2;Nizina Mazowiecka,20.8,52.2;Nizina Podlaska,22.8,52.6;Polesie Lubelskie,23.0,51.4;Kotlina Sandomierska,21.8,50.3;Wyżyna Śląska,19.0,50.3;Wyżyna Krakowsko-Częstochowska,19.7,50.4;Wyżyna Małopolska,20.7,50.8;Wyżyna Lubelska,22.7,51.1;Roztocze,23.0,50.5;Żuławy Wiślane,19.2,54.1;Nizina Warmińska,20.4,54.0",
+w:"Kanał Elbląski,19.8,54.0;Kanał Augustowski,23.2,53.8;Kanał Bydgoski,18.0,53.15;Kanał Gliwicki,18.6,50.3;Mierzeja Helska,18.7,54.7;Mierzeja Wiślana,19.3,54.38;Wolin,14.5,53.9;Uznam,14.0,53.9;Zatoka Pomorska,15.0,54.2;Zatoka Gdańska,18.9,54.65;Zatoka Pucka,18.55,54.68;Zalew Wiślany,19.9,54.4;Zalew Szczeciński,14.4,53.75"};
+const RV="Wisła:19.0,49.7 19.94,50.05 21.75,50.68 21.97,51.42 21.0,52.25 19.7,52.55 18.6,53.0 18.75,53.48 18.95,54.35;Odra:18.2,50.1 17.9,50.67 17.0,51.1 16.1,51.66 15.1,52.05 14.65,52.58 14.55,53.4 14.6,53.8;Warta:19.4,50.6 19.1,50.8 18.7,51.6 18.2,52.2 16.95,52.4 15.2,52.74 14.65,52.58;Noteć:18.2,52.6 17.4,53.0 16.7,53.0 15.8,52.75;San:22.7,49.1 22.78,49.78 22.68,50.02 22.05,50.55 21.85,50.68;Bug:23.55,51.55 23.6,52.08 22.65,52.4 21.85,52.65 21.1,52.5;Narew:23.5,52.9 22.77,53.2 21.57,53.08 21.08,52.7 20.8,52.5;Pilica:19.8,50.6 20.0,51.5 21.2,51.8 21.35,51.85;Wieprz:22.6,51.1 22.9,51.6 21.85,51.55;Bzura:19.3,52.0 19.9,52.3 20.4,52.35;Dunajec:20.0,49.48 20.7,49.62 20.9,50.0 21.4,50.35";
+const OUT="14.25,53.92 15.57,54.18 16.85,54.58 17.55,54.76 18.55,54.6 18.65,54.37 19.45,54.38 19.64,54.45 20.6,54.4 21.3,54.33 22.8,54.36 23.5,54.0 23.2,53.5 23.9,52.7 23.6,52.1 23.2,51.6 24.1,50.85 23.5,50.4 22.7,49.6 22.55,49.08 21.6,49.4 20.9,49.3 20.1,49.2 19.5,49.6 19.0,49.4 18.8,49.6 18.0,49.95 17.7,50.3 16.9,50.4 16.2,50.7 15.0,51.0 14.8,51.5 14.7,52.0 14.6,52.6 14.15,52.85 14.2,53.5";
+const X=lo=>(lo-13.8)*61.6+10, Y=la=>(55-la)*100+10;
+const pp=s=>s.trim().split(' ').map(t=>{let[a,b]=t.split(',');return[X(+a),Y(+b)]});
+document.getElementById('pl').setAttribute('d','M'+pp(OUT).map(p=>p.join(',')).join('L')+'Z');
+const F=[];
+for(const c in PT)PT[c].split(';').forEach(t=>{let[n,a,b]=t.split(',');F.push({n,c,pts:[[X(+a),Y(+b)]]})});
+RV.split(';').forEach(t=>{let[n,s]=t.split(':');F.push({n,c:'r',pts:pp(s)})});
+const $=id=>document.getElementById(id),svg=$('s'),L=$('L'),NS='http://www.w3.org/2000/svg';
+let cat='r',mode='q',queue=[],cur=null,ok=0,tot=0,wrong=[],lock=false;
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||L).appendChild(e);return e}
+function dseg(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy;let t=l?((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy)}
+function dist(f,p){if(f.pts.length==1)return Math.hypot(p[0]-f.pts[0][0],p[1]-f.pts[0][1]);let m=1e9;for(let i=0;i<f.pts.length-1;i++)m=Math.min(m,dseg(p,f.pts[i],f.pts[i+1]));return m}
+function show(f,col,label){const w=f.c=='r';
+ if(w)el('polyline',{points:f.pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:col,'stroke-width':5,'stroke-linecap':'round','stroke-linejoin':'round'});
+ else el('circle',{cx:f.pts[0][0],cy:f.pts[0][1],r:Math.min(TOL[f.c],26),fill:col,'fill-opacity':.3,stroke:col,'stroke-width':2.5});
+ if(label){const p=f.pts[Math.floor(f.pts.length/2)];const t=el('text',{x:Math.min(Math.max(p[0],60),610),y:p[1]-(w?10:Math.min(TOL[f.c],26)+5),'text-anchor':'middle',class:'t'});t.textContent=f.n}}
+function clr(){L.innerHTML=''}
+function pt(e){const q=svg.createSVGPoint();q.x=e.clientX;q.y=e.clientY;const r=q.matrixTransform(svg.getScreenCTM().inverse());return[r.x,r.y]}
+function setCats(){const d=$('cats');d.innerHTML='';const all={...CATS,a:'Wszystko'};for(const k in all){const b=document.createElement('button');b.textContent=all[k];if(k==cat)b.className='on';b.onclick=()=>{cat=k;setCats();start()};d.appendChild(b)}}
+function pool(){return F.filter(f=>cat=='a'||f.c==cat)}
+function start(list){clr();$('rt').style.display='none';$('nx').style.display='none';$('msg').textContent='';ok=0;tot=0;wrong=[];
+ if(mode=='n'){$('ql').textContent='Tryb nauki';$('qn').textContent='Dotknij mapę';$('sc').textContent='';pool().forEach(f=>show(f,'#2a6fdb'));return}
+ queue=(list||pool()).slice().sort(()=>Math.random()-.5);next()}
+function next(){clr();lock=false;$('nx').style.display='none';$('msg').textContent='';
+ if(!queue.length){cur=null;$('ql').textContent='Koniec rundy';$('qn').textContent=ok+' / '+tot+' poprawnie';if(wrong.length)$('rt').style.display='';return}
+ cur=queue.shift();$('ql').textContent=LBL[cur.c]+' – kliknij na mapie:';$('qn').textContent=cur.n;$('sc').textContent='✔ '+ok+'  ✖ '+(tot-ok)+'  ·  zostało '+queue.length}
+svg.addEventListener('click',e=>{const p=pt(e);
+ if(mode=='n'){clr();pool().forEach(f=>show(f,'#2a6fdb'));let b=null,m=1e9;pool().forEach(f=>{const d=dist(f,p)-TOL[f.c]*.0;if(d<m){m=d;b=f}});if(b&&m<TOL[b.c]+10){clr();show(b,'#d98b00',true);$('qn').textContent=b.n;$('ql').textContent=LBL[b.c]}return}
+ if(!cur||lock)return;lock=true;tot++;const hit=dist(cur,p)<=TOL[cur.c]*M;
+ if(hit){ok++;show(cur,'#1f9d55',true);$('msg').textContent='✅ Dobrze!';setTimeout(next,900)}
+ else{wrong.push(cur);el('circle',{cx:p[0],cy:p[1],r:5,fill:'#d93b3b'});show(cur,'#d93b3b',true);$('msg').textContent='❌ Tu jest '+cur.n+' (zaznaczone na czerwono)';$('nx').style.display=''}
+ $('sc').textContent='✔ '+ok+'  ✖ '+(tot-ok)});
+$('nx').onclick=next;
+$('rt').onclick=()=>{const w=wrong;start(w)};
+$('m1').onclick=()=>{mode='q';$('m1').className='on';$('m2').className='';start()};
+$('m2').onclick=()=>{mode='n';$('m2').className='on';$('m1').className='';start()};
+let M=1.5;
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{M=+b.dataset.m;document.querySelectorAll('[data-m]').forEach(x=>x.className=x==b?'on':'')});
+setCats();start();
+</script></body></html>
